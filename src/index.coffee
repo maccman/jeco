@@ -9,8 +9,12 @@ exports.precompile = precompile = (source) ->
     function(__obj) {
       if (!__obj) __obj = {};
       var $ = jQuery.sub();
-      $.push = function(element){ 
-        return $ = $.add(element); 
+      $.fn.push = function(selector){ 
+        var set = typeof selector === "string" ?
+    				$( selector, context ) :
+    				$.makeArray( selector && selector.nodeType ? [ selector ] : selector )
+    	  $.merge( this, set );
+    	  return this;
       };
       var __out = jQuery(), __capture = function(callback) {
         var out = __out, result;
@@ -19,11 +23,27 @@ exports.precompile = precompile = (source) ->
         result = __out;
         __out = out;
         return result;
-      },  __sanitize = function(html){ 
-        return html; 
       }, item = function(obj, template) {
         if (!template) template = obj, obj = __obj;
         return $(template).data('eco', obj);
+      }, __sanitize = function(value) {
+        if (value && value.ecoSafe) {
+          return value;
+        } else if (typeof value !== 'undefined' && value != null) {
+          return __escape(value);
+        } else {
+          return '';
+        }
+      }, __safe, __objSafe = __obj.safe, __escape = __obj.escape;
+      __safe = __obj.safe = function(value) {
+        if (value && value.ecoSafe) {
+          return value;
+        } else {
+          if (!(typeof value !== 'undefined' && value != null)) value = '';
+          var result = new String(value);
+          result.ecoSafe = true;
+          return result;
+        }
       };
       if (!__escape) {
         __escape = __obj.escape = function(value) {
